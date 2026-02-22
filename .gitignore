@@ -1,0 +1,12 @@
+# Python cache/artifacts
+__pycache__/
+*.py[cod]
+.venv/
+.DS_Store
+
+# Local model/index outputs
+vectorstore/
+
+# Private class/professor materials (do not commit)
+data/professor_materials/*
+!data/professor_materials/.gitkeep

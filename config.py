@@ -1,0 +1,28 @@
+"""Centralized configuration for the RAG study assistant."""
+
+from pathlib import Path
+
+# Paths
+BASE_DIR = Path(__file__).resolve().parent
+DATA_DIR = BASE_DIR / "data" / "pdfs"
+VECTORSTORE_DIR = BASE_DIR / "vectorstore"
+
+# Chunking
+CHUNK_SIZE = 512
+CHUNK_OVERLAP = 64
+
+# Retrieval
+TOP_K = 5
+
+# Models
+EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
+LLM_MODEL = "Qwen/Qwen2.5-3B-Instruct"
+MAX_NEW_TOKENS = 512
+TEMPERATURE = 0.1
+
+# Prompting
+SYSTEM_PROMPT = (
+    "You are an algorithms study assistant. Use only the provided context to answer. "
+    "If the context is insufficient, say: 'I don't have enough context.' "
+    "At the end, include a brief 'Sources' section with citation ids like [1], [2]."
+)
