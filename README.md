@@ -52,6 +52,8 @@ Answer (with source references)
 4. **Indexing**: Embeddings are stored in a FAISS vector index for fast approximate nearest neighbor search.
 5. **Retrieval**: Given a user query, the system embeds the query and retrieves the top-k most similar chunks from the FAISS index.
 6. **Generation**: Retrieved chunks are injected into a prompt template designed to ground the LLM response in the source material and reduce hallucination. The LLM generates an answer via LangChain.
+7. **Math Repair Pass**: If math is detected, a second formatting pass repairs Markdown/LaTeX delimiters to improve render quality in the UI.
+8. **Visual Summary**: The app extracts essential points from the final answer and renders an SVG summary snapshot card.
 
 ## Features
 
@@ -59,7 +61,12 @@ Answer (with source references)
 - **Document chunking pipeline** with configurable chunk size, overlap, and strategy
 - **FAISS vector search** for fast retrieval over embedded passages
 - **Context-injected prompt templates** to reduce hallucination and improve answer grounding
-- **Streaming responses** via Gradio for interactive use
+- **Chat mode** with conversation context for follow-up questions
+- **Enter-to-send + button send** interaction in Gradio
+- **Streaming responses** with live rendering
+- **Loading/status indicator** (`Loading retrieved context...`, `Generating response...`, `Ready.`)
+- **Math-aware output** with Markdown + LaTeX delimiters and second-pass formatting repair
+- **SVG summary renderer** that generates an "Essential Summary" card per response
 - **Modular design**: swap embedding models, chunking strategies, or LLMs independently
 
 ## Project Structure
@@ -141,6 +148,11 @@ python app.py
 
 This launches the Gradio interface at `http://localhost:7860`.
 
+UI behavior:
+- Press **Enter** in the message box to submit
+- Or click **Send**
+- Use **Clear** to reset chat and summary snapshot
+
 ## Usage Examples
 
 **Example queries:**
@@ -151,6 +163,7 @@ This launches the Gradio interface at `http://localhost:7860`.
 - "How does dynamic programming apply to the knapsack problem?"
 
 The system retrieves relevant passages from the source textbooks and generates answers grounded in the retrieved context.
+The app then appends canonical source paths/pages and generates an SVG summary of key points.
 
 ## Design Decisions and Iterations
 

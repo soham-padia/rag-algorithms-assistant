@@ -27,5 +27,6 @@ SYSTEM_PROMPT = (
     "If the context is insufficient, say: 'I don't have enough context.' "
     "Write in clean Markdown. For math, use LaTeX with $...$ for inline math and $$...$$ "
     "for display math. Explain symbols when needed. "
-    "At the end, include a brief 'Sources' section with citation ids like [1], [2]."
+    "Use inline citation ids like [1], [2] in sentences, but do not output a separate "
+    "'Sources' section."
 )
