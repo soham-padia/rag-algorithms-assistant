@@ -107,7 +107,7 @@ pip install -r requirements.txt
 
 ### Configuration
 
-Default generation model is `Qwen/Qwen2.5-3B-Instruct` (free/public on Hugging Face), so no token is required by default.
+Default generation model is `Qwen/Qwen2.5-1.5B-Instruct` (free/public on Hugging Face), selected for faster free CPU hosting while keeping reasonable quality.
 
 If you choose a gated/private Hugging Face model, set:
 
@@ -123,7 +123,7 @@ Adjust parameters in `config.py`:
 CHUNK_SIZE = 512          # characters per chunk
 CHUNK_OVERLAP = 64        # overlap between consecutive chunks
 EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
-LLM_MODEL = "Qwen/Qwen2.5-3B-Instruct"
+LLM_MODEL = "Qwen/Qwen2.5-1.5B-Instruct"
 TOP_K = 5                 # number of chunks to retrieve per query
 DATA_DIR = "data/pdfs"
 PROFESSOR_DATA_DIR = "data/professor_materials"
@@ -152,6 +152,27 @@ UI behavior:
 - Press **Enter** in the message box to submit
 - Or click **Send**
 - Use **Clear** to reset chat and summary snapshot
+- Startup health status indicates whether index is ready or auto-indexing will run
+
+## Free Hosting (Recommended: Hugging Face Spaces)
+
+You can host this app for free using a Gradio Space.
+
+1. Push this repo to GitHub (already done).
+2. In Hugging Face, create a new **Space**:
+   - SDK: **Gradio**
+   - Hardware: **CPU Basic (free)**
+3. Link/import this GitHub repository.
+4. In Space settings, add environment variables if needed:
+   - `HF_TOKEN` only if you switch to a gated/private model
+   - `PYTORCH_ENABLE_MPS_FALLBACK` is not needed on Spaces (Linux CPU)
+5. Deploy.
+
+Notes:
+- On first boot, if `vectorstore/` is missing, the app now auto-builds FAISS from `data/pdfs/` and `data/professor_materials/`.
+- First startup can be slow on free CPU due to embedding/index build and model load.
+- Keep only content you are allowed to host publicly (copyright/privacy).
+- See `/Users/sohampadia/workspace/rag_study_assistant/DEPLOY.md` for a one-page deployment checklist.
 
 ## Usage Examples
 

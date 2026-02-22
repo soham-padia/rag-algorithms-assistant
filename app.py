@@ -10,10 +10,10 @@ from urllib.parse import quote
 import gradio as gr
 
 from chain import answer_query
-from retriever import get_retriever
+from retriever import get_retriever, startup_health_message
 
 
-retriever = get_retriever()
+retriever = None
 
 
 def _build_sources_block(sources: dict[str, str]) -> str:
@@ -105,15 +105,22 @@ def _build_summary_svg_html(question: str, answer: str) -> str:
 
 
 def stream_chat(user_message: str, history: list[dict] | None):
+    global retriever
+
     history = list(history or [])
     message = (user_message or "").strip()
     if not message:
-        yield history, "", "Enter a question to begin.", ""
+        yield history, "", startup_health_message(), ""
         return
 
     history.append({"role": "user", "content": message})
     history.append({"role": "assistant", "content": "_Thinking..._"})
     yield history, "", "Loading retrieved context...", ""
+
+    if retriever is None:
+        yield history, "", "Startup health: building/loading retriever (first run may take time)...", ""
+        retriever = get_retriever()
+        yield history, "", "Startup health: retriever ready.", ""
 
     prior_turns = history[:-2]
     answer, sources = answer_query(message, retriever, chat_history=prior_turns)
@@ -145,7 +152,7 @@ with gr.Blocks(title="RAG Algorithms Study Assistant") as demo:
             {"left": "$", "right": "$", "display": False},
         ],
     )
-    status = gr.Markdown("Ready.")
+    status = gr.Markdown(startup_health_message())
     summary_card = gr.HTML(label="Summary Snapshot")
 
     with gr.Row():
@@ -172,11 +179,12 @@ with gr.Blocks(title="RAG Algorithms Study Assistant") as demo:
     )
 
     clear_btn.click(
-        lambda: ([], "", "Ready.", ""),
+        lambda: ([], "", startup_health_message(), ""),
         inputs=None,
         outputs=[chat, query, status, summary_card],
     )
 
 
 if __name__ == "__main__":
+    print(startup_health_message())
     demo.queue().launch()
