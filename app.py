@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 import time
 
 import gradio as gr
@@ -21,8 +22,9 @@ def stream_answer(user_query: str):
     answer, sources = answer_query(user_query.strip(), retriever)
 
     output = ""
-    for token in answer.split():
-        output += token + " "
+    # Preserve markdown and LaTeX formatting while streaming.
+    for token in re.findall(r"\S+|\s+", answer):
+        output += token
         yield output
         time.sleep(0.01)
 

@@ -72,7 +72,13 @@ def answer_query(query: str, retriever) -> tuple[str, dict[str, str]]:
         "{system_prompt}\n\n"
         "Question: {question}\n\n"
         "Context:\n{context}\n\n"
-        "Respond with a concise explanation and include citation ids."
+        "Respond in Markdown only.\n"
+        "Math rules:\n"
+        "- Inline math must use $...$.\n"
+        "- Display math must use $$...$$ on separate lines.\n"
+        "- Do not wrap equations in square brackets like [ ... ].\n"
+        "- Do not add redundant parentheses around standalone symbols.\n"
+        "Include citation ids in the explanation."
     )
 
     chain = prompt | LLM

@@ -5,6 +5,7 @@ from pathlib import Path
 # Paths
 BASE_DIR = Path(__file__).resolve().parent
 DATA_DIR = BASE_DIR / "data" / "pdfs"
+PROFESSOR_DATA_DIR = BASE_DIR / "data" / "professor_materials"
 VECTORSTORE_DIR = BASE_DIR / "vectorstore"
 
 # Chunking
@@ -24,5 +25,7 @@ TEMPERATURE = 0.1
 SYSTEM_PROMPT = (
     "You are an algorithms study assistant. Use only the provided context to answer. "
     "If the context is insufficient, say: 'I don't have enough context.' "
+    "Write in clean Markdown. For math, use LaTeX with $...$ for inline math and $$...$$ "
+    "for display math. Explain symbols when needed. "
     "At the end, include a brief 'Sources' section with citation ids like [1], [2]."
 )

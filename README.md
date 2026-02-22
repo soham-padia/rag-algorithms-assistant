@@ -119,6 +119,7 @@ EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
 LLM_MODEL = "Qwen/Qwen2.5-3B-Instruct"
 TOP_K = 5                 # number of chunks to retrieve per query
 DATA_DIR = "data/pdfs"
+PROFESSOR_DATA_DIR = "data/professor_materials"
 VECTORSTORE_DIR = "vectorstore"
 ```
 
@@ -131,8 +132,6 @@ python ingest.py
 ```
 
 This parses the PDFs, chunks the text, computes embeddings, and saves the FAISS index to `vectorstore/`.
-
-If you want to include class materials from `data/professor_materials/`, copy or move those PDFs into `data/pdfs/` before running ingestion (the current script reads from `data/pdfs/`).
 
 ### Running the App
 

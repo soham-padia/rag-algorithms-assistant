@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
+from langchain_huggingface import HuggingFaceEmbeddings
 
 import config
 
