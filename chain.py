@@ -88,8 +88,8 @@ def _build_llm() -> HuggingFacePipeline:
         model=model,
         tokenizer=tokenizer,
         max_new_tokens=config.MAX_NEW_TOKENS,
-        do_sample=config.TEMPERATURE > 0,
-        temperature=config.TEMPERATURE,
+        do_sample=False,
+        temperature=None,
         return_full_text=False,
     )
     return HuggingFacePipeline(pipeline=gen_pipeline)
@@ -122,6 +122,80 @@ def _has_math_format_issues(text: str) -> bool:
     return False
 
 
+def _looks_truncated(text: str) -> bool:
+    stripped = text.rstrip()
+    if not stripped:
+        return True
+
+    lines = [ln.strip() for ln in stripped.splitlines() if ln.strip()]
+    last_line = lines[-1] if lines else stripped
+
+    # Typical abrupt endings.
+    if stripped.endswith((":", "\\", "(", "{", "[", "=", ",", "and")):
+        return True
+
+    # Last line that looks unfinished.
+    if re.search(r"[A-Za-z0-9\)\]\}]$", last_line) and not re.search(
+        r"[.!?:]$", last_line
+    ):
+        return True
+
+    # Unbalanced delimiters often indicate cut-off generation.
+    if stripped.count("$") % 2 != 0 or stripped.count("$$") % 2 != 0:
+        return True
+    if stripped.count("{") > stripped.count("}"):
+        return True
+    if stripped.count(r"\(") > stripped.count(r"\)"):
+        return True
+    if stripped.count(r"\[") > stripped.count(r"\]"):
+        return True
+    if stripped.count("(") > stripped.count(")"):
+        return True
+
+    # Common partial headings/tokens for this domain.
+    if re.search(r"(Case\s+\d+\s*:\s*)$", stripped):
+        return True
+    if re.search(r"\\Theta\([^)]*$", stripped):
+        return True
+    if re.search(r"^\d+\.\s+.+$", last_line) and not re.search(
+        r"[.!?:]$", last_line
+    ):
+        return True
+
+    return False
+
+
+def _continue_truncated_answer(
+    partial_answer: str, question: str, context: str, history: str
+) -> str:
+    continue_prompt = PromptTemplate.from_template(
+        "{system_prompt}\n\n"
+        "Conversation so far:\n{history}\n\n"
+        "Question: {question}\n\n"
+        "Context:\n{context}\n\n"
+        "The assistant answer below was truncated. Continue it from the end only.\n"
+        "Do not restart or repeat previous text.\n"
+        "Keep Markdown and LaTeX valid and concise.\n\n"
+        "Partial answer:\n{partial_answer}\n\n"
+        "Continuation:"
+    )
+    continue_chain = continue_prompt | LLM
+    try:
+        continuation = continue_chain.invoke(
+            {
+                "system_prompt": config.SYSTEM_PROMPT,
+                "history": history,
+                "question": question,
+                "context": context,
+                "partial_answer": partial_answer,
+            }
+        )
+        return str(continuation).strip()
+    except RuntimeError:
+        # Keep serving partial answer instead of crashing the app.
+        return ""
+
+
 def _repair_math_format(answer: str) -> str:
     repair_prompt = PromptTemplate.from_template(
         "You are a strict Markdown+LaTeX formatter.\n"
@@ -140,7 +214,10 @@ def _repair_math_format(answer: str) -> str:
         "Return only the repaired answer."
     )
     repair_chain = repair_prompt | LLM
-    repaired = repair_chain.invoke({"answer": answer})
+    try:
+        repaired = repair_chain.invoke({"answer": answer})
+    except RuntimeError:
+        return answer
     text = str(repaired).strip()
     if text.startswith("Answer to repair:"):
         text = text.split("Answer to repair:", 1)[1].lstrip()
@@ -161,6 +238,12 @@ def _normalize_math_delimiters(text: str) -> str:
 
 
 def _strip_repair_preface(text: str) -> str:
+    text = re.sub(
+        r"^\s*To repair[\s\S]*?(?:Here is the corrected version:\s*|Here'?s an explanation[^:\n]*:\s*)",
+        "",
+        text,
+        flags=re.IGNORECASE,
+    )
     text = re.sub(
         r"^\s*To repair.*?(?:final answer is:|The final answer is:)\s*",
         "",
@@ -222,6 +305,8 @@ def answer_query(
         "Question: {question}\n\n"
         "Context:\n{context}\n\n"
         "Respond in Markdown only.\n"
+        "Keep the response concise (about 6-10 short bullets or equivalent length).\n"
+        "Do not include worked examples unless explicitly asked.\n"
         "Math rules:\n"
         "- Inline math must use $...$.\n"
         "- Display math must use $$...$$ on separate lines.\n"
@@ -241,6 +326,13 @@ def answer_query(
         }
     )
     answer = str(response).strip()
+    for _ in range(2):
+        if not _looks_truncated(answer):
+            break
+        continuation = _continue_truncated_answer(answer, query, context, history)
+        if not continuation:
+            break
+        answer = f"{answer}\n{continuation}".strip()
 
     # Second pass: if math is present, run formatter repair. Retry once if still malformed.
     if _contains_math(answer):

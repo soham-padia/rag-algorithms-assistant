@@ -18,8 +18,8 @@ TOP_K = 5
 # Models
 EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
 LLM_MODEL = "Qwen/Qwen2.5-1.5B-Instruct"
-MAX_NEW_TOKENS = 384
-TEMPERATURE = 0.1
+MAX_NEW_TOKENS = 512
+TEMPERATURE = 0.0
 
 # Prompting
 SYSTEM_PROMPT = (
